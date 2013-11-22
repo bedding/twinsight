@@ -1,0 +1,162 @@
+{% load bootstrap3 %}
+
+<html>
+<head>
+<script src='{{ STATIC_URL }}jquery-2.0.3.js' type="text/javascript"></script>
+{% bootstrap_css %}
+{% bootstrap_javascript %}
+<script type="text/javascript" src="https://www.google.com/jsapi"></script>
+<script type="text/javascript">
+      google.load("visualization", "1", {packages:["corechart"]});
+      google.setOnLoadCallback(drawChart);
+      function drawChart() {
+        var piechart_data = google.visualization.arrayToDataTable([
+          ['Sentiment', 'count'],
+          ['Happy', {{ pos }}],
+          ['Unhappy', {{ neg }}]
+        ]);
+		
+		var timeline_data = google.visualization.arrayToDataTable([
+			['Time', 'Happy', 'Unhappy'],
+			{% autoescape off %}
+			{% for entry in timeline %}
+			{{entry}},
+			{% endfor %}
+			{% endautoescape %}
+		]);
+
+        var piechart_options = {
+			title: 'How many tweets are happy about the topic?',
+			pieHole: 0.4,
+			height: 300,
+			width: 400,
+			chartArea: {width: '70%', height: '100%'},
+			colors: ['#037F30','#4D75FF'],
+        };
+		
+		var timeline_options = {
+			title: 'timeline',
+			isStacked: true,
+			chartArea: {width: '90%', height: '70%'},
+			height: 300,
+			width: 1100,
+			series: [{color: '#037F30'}, {color: '#4D75FF'}],
+		};
+
+        var piechart = new google.visualization.PieChart(document.getElementById('piechart'));
+		var timeline = new google.visualization.ColumnChart(document.getElementById('timeline'));
+        piechart.draw(piechart_data, piechart_options);
+		timeline.draw(timeline_data, timeline_options);
+      }
+</script>
+
+<style>
+#tweet-content {
+	font-size: 11px;
+}
+	
+.my-fluid-container {
+	padding-left: 100px;
+	padding-right: 100px;
+	margin-left: auto;
+	margin-right: auto;
+}
+
+#table-wrapper {
+	height: 310px;
+	margin-top: 10px;
+	overflow-y: scroll;
+	overflow-x: hidden;
+}
+
+.chart-wrapper {
+	margin-top: 10px;
+	height: 310px;
+	overflow-x: scroll;
+	overflow-y: hidden;
+}
+
+thead {
+	font-weight: bold;
+}
+</style>
+</head>
+
+<body>
+
+<nav class="navbar navbar-default" role="navigation">
+  <!-- Brand and toggle get grouped for better mobile display -->
+  <div class="navbar-header">
+    <a class="navbar-brand" href="#">Twitter Sentiment Visualization</a>
+  </div>
+
+  <!-- Collect the nav links, forms, and other content for toggling -->
+  <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
+    <form class="navbar-form navbar-left" role="search" action='/classifier/index' method='post'>{% csrf_token %}
+      <div class="form-group">
+        {{ form.keyword }}
+      </div>
+      <button type="submit" class="btn btn-primary">Submit</button>
+    </form>
+</nav>
+
+<div class='my-fluid-container'>
+
+<div class='row'>
+<h2>Result for "{{ keyword }}"</h2>
+</div>
+
+<div class='row'>
+<div class="panel panel-primary">
+<div class="panel-heading">Total tweets: {{ len }}</div>
+<div class="panel-body">
+<ul class="nav nav-tabs">
+	<li><a href="#pie-chart" data-toggle="tab">Pie Chart</a></li>
+	<li><a href="#time-line" data-toggle="tab">Tiemline</a></li>
+	<li><a href="#tweet" data-toggle="tab">Tweets</a></li>
+</ul>
+
+<div class="tab-content">
+	<div class="tab-pane active" id="pie-chart">
+		<div class='chart-wrapper'><div id="piechart"></div></div>
+	</div>
+	<div class="tab-pane" id="time-line">
+		<div class='chart-wrapper'><div id="timeline"></div></div>
+	</div>
+	<div class="tab-pane" id="tweet"><div id='table-wrapper'>
+		<table class="table table-condenced table-bordered" id="tweet-content">
+		<thead>
+			<tr>
+			<td>time</td>
+			<td>user</td>
+			<td>tag</td>
+			<td>tweet</td>
+			</tr>
+		</thead>
+		</tbody>
+			{% for tweet in format_tweets %}
+			<tr>
+			<td>{{tweet.2}}</td>
+			<td>{{tweet.1}}</td>
+			<td>{{tweet.3}} </td>
+			<td>{{tweet.0}}</td>
+			</tr>
+			{% endfor %}
+		</tbody>
+		</table>
+	</div></div>
+</div>
+</div>
+</div>
+</div>
+
+<div class='row'>
+	<h1>About</hr>
+	
+</div>
+
+</div>
+</div>
+</body>
+
+</html>
